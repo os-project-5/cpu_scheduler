@@ -1,5 +1,9 @@
 import java.util.ArrayList;
 import java.util.Queue;
+import java.util.*;
+
+record Pair<PID, RemainingTime>(PID pid, RemainingTime remainingTime) {
+}
 
 abstract class Scheduler {
 
@@ -16,7 +20,7 @@ abstract class Scheduler {
 }
 
 class FCFS extends Scheduler {
-    Queue<Process> processQueue;
+    Queue<Integer> processQueue;
 
     public FCFS() {
         super();
@@ -26,13 +30,37 @@ class FCFS extends Scheduler {
     @Override
     void addProcess(Process p) {
         processes.add(p);
-        processQueue.add(p);
+        processQueue.add(processes.size() - 1);
 
     }
 
     @Override
     Process getNextProcess() {
-        return processQueue.poll();
+        return processes.get(processQueue.poll());
+    }
+
+}
+
+class SJF extends Scheduler {
+    PriorityQueue<Pair<Integer, Integer>> processQueue = new PriorityQueue<>(
+            Comparator.comparingInt(p -> p.remainingTime()));
+    boolean isPreemptive;
+
+    public SJF(boolean isPreemptive) {
+        super();
+        this.isPreemptive = isPreemptive;
+    }
+
+    @Override
+    void addProcess(Process p) {
+        processes.add(p);
+        processQueue.add(new Pair<>(processes.size() - 1, p.remainingTime));
+
+    }
+
+    @Override
+    Process getNextProcess() {
+        return processes.get(processQueue.poll().pid());
     }
 
 }

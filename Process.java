@@ -1,9 +1,7 @@
 import java.util.Random;
 
 public class Process {
-    private static int idCounter = 1;
 
-    public String processId;
     public int arrivalTime;
     public int burstTime;
     public int priority;
@@ -16,7 +14,7 @@ public class Process {
     public String color;
 
     public Process(int burstTime, int priority, Integer arrivalTime) {
-        this.processId = "P" + idCounter++;
+
 
         Random rand = new Random();
         this.arrivalTime = (arrivalTime == null) ? rand.nextInt(11) : arrivalTime;
@@ -35,7 +33,7 @@ public class Process {
 
     @Override
     public String toString() {
-        return String.format("[%s] Arr: %d, Burst: %d, Rem: %d, Pri: %d",
-                processId, arrivalTime, burstTime, remainingTime, priority);
+        return String.format("Arr: %d, Burst: %d, Rem: %d, Pri: %d",
+                 arrivalTime, burstTime, remainingTime, priority);
     }
 }
