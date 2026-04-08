@@ -20,23 +20,19 @@ class FCFS extends Scheduler {
 
     public FCFS() {
         super();
-        processQueue = new LinkedList<Process>();
-        
+
     }
 
     @Override
     void addProcess(Process p) {
         processes.add(p);
-
+        processQueue.add(p);
 
     }
 
     @Override
     Process getNextProcess() {
-        if (processes.isEmpty()) {
-            return null;
-        }
-        return processes.remove(0);
+        return processQueue.poll();
     }
 
 }
