@@ -1,4 +1,3 @@
-import java.util.Random;
 
 public class Process {
 
@@ -11,8 +10,7 @@ public class Process {
 
     public Process(int burstTime, int priority, Integer arrivalTime) {
 
-        Random rand = new Random();
-        this.arrivalTime = (arrivalTime == null) ? rand.nextInt(11) : arrivalTime;
+        this.arrivalTime = arrivalTime;
 
         this.burstTime = burstTime;
         this.priority = priority;
