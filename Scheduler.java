@@ -1,6 +1,6 @@
 import java.util.*;
 
-record Pair<PID, Time>(PID pid, Time time) {
+record Pair<PID, NUM>(PID pid, NUM num) {
 }
 
 public abstract class Scheduler {
@@ -11,7 +11,7 @@ public abstract class Scheduler {
 
     public Scheduler(boolean isPreemptive) {
         processQueue = new PriorityQueue<>(
-                Comparator.comparingInt(p -> p.time()));
+                Comparator.comparingInt(p -> p.num()));
         processes = new ArrayList<>();
         this.isPreemptive = isPreemptive;
     }
@@ -19,9 +19,9 @@ public abstract class Scheduler {
     public static void main(String[] args) {
         int currentTime = 0;
         Scheduler sch = new SJF(true);
-        sch.addProcess(new Process(5, 1, 0));
-        sch.addProcess(new Process(3, 1, 1));
-        sch.addProcess(new Process(8, 1, 2));
+        sch.addProcess(new Process(5, 5, 0));
+        sch.addProcess(new Process(3, 5, 1));
+        sch.addProcess(new Process(4, 5, 2));
         sch.readyProcess(currentTime);
         while (currentTime < 20) {
             int pid = sch.getNextProcess();
@@ -38,11 +38,19 @@ public abstract class Scheduler {
                 sch.readyProcess(currentTime);
                 sch.updateProcesses(pid, currentTime);
                 if (sch.isPreemptive && sch.peekNextProcess() != top_pid) {
-                    if (sch.processes.get(sch.peekNextProcess()).remainingTime < t - i - 1) {
+                    if ((sch instanceof SJF) && sch.processes.get(sch.peekNextProcess()).remainingTime < sch.processes
+                            .get(pid).remainingTime) {
                         sch.processQueue.add(new Pair<>(pid, sch.processes.get(pid).arrivalTime));
                         sch.readyProcess(currentTime);
                         break;
-                    } else {
+                    } else if ((sch instanceof Priority)
+                            && sch.processes.get(sch.peekNextProcess()).priority < sch.processes.get(pid).priority) {
+                        sch.processQueue.add(new Pair<>(pid, sch.processes.get(pid).arrivalTime));
+                        sch.readyProcess(currentTime);
+                        break;
+                    }
+
+                    else {
                         top_pid = sch.peekNextProcess();
                     }
                 }
@@ -86,7 +94,7 @@ class FCFS extends Scheduler {
 
     @Override
     void readyProcess(int currentTime) {
-        while (!processQueue.isEmpty() && currentTime >= processQueue.peek().time())
+        while (!processQueue.isEmpty() && currentTime >= processQueue.peek().num())
             readyQueue.add(processQueue.poll().pid());
 
     }
@@ -109,14 +117,44 @@ class SJF extends Scheduler {
     public SJF(boolean isPreemptive) {
         super(isPreemptive);
         readyQueue = new PriorityQueue<>(
-                Comparator.comparingInt(p -> p.time()));
+                Comparator.comparingInt(p -> p.num()));
     }
 
     @Override
     void readyProcess(int currentTime) {
-        while (!processQueue.isEmpty() && currentTime >= processQueue.peek().time()) {
+        while (!processQueue.isEmpty() && currentTime >= processQueue.peek().num()) {
             int pid = processQueue.poll().pid();
             readyQueue.add(new Pair<>(pid, processes.get(pid).remainingTime));
+        }
+
+    }
+
+    @Override
+    int getNextProcess() {
+        return readyQueue.isEmpty() ? -1 : readyQueue.poll().pid();
+    }
+
+    @Override
+    int peekNextProcess() {
+        return readyQueue.isEmpty() ? -1 : readyQueue.peek().pid();
+    }
+
+}
+
+class Priority extends Scheduler {
+    PriorityQueue<Pair<Integer, Integer>> readyQueue;
+
+    public Priority(boolean isPreemptive) {
+        super(isPreemptive);
+        readyQueue = new PriorityQueue<>(
+                Comparator.comparingInt(p -> p.num()));
+    }
+
+    @Override
+    void readyProcess(int currentTime) {
+        while (!processQueue.isEmpty() && currentTime >= processQueue.peek().num()) {
+            int pid = processQueue.poll().pid();
+            readyQueue.add(new Pair<>(pid, processes.get(pid).priority));
         }
 
     }
