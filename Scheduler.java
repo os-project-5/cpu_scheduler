@@ -8,17 +8,35 @@ public abstract class Scheduler {
     PriorityQueue<Pair<Integer, Integer>> processQueue;
     List<Process> processes;
     boolean isPreemptive;
+    int timeQuantum;
+
+    public Scheduler() {
+        processQueue = new PriorityQueue<>(
+                Comparator.comparingInt(p -> p.num()));
+        processes = new ArrayList<>();
+        isPreemptive = false;
+        timeQuantum = 0;
+    }
 
     public Scheduler(boolean isPreemptive) {
         processQueue = new PriorityQueue<>(
                 Comparator.comparingInt(p -> p.num()));
         processes = new ArrayList<>();
         this.isPreemptive = isPreemptive;
+        timeQuantum = 0;
+    }
+
+    public Scheduler(int timeQuantum) {
+        processQueue = new PriorityQueue<>(
+                Comparator.comparingInt(p -> p.num()));
+        processes = new ArrayList<>();
+        this.isPreemptive = false;
+        this.timeQuantum = timeQuantum;
     }
 
     public static void main(String[] args) {
         int currentTime = 0;
-        Scheduler sch = new SJF(true);
+        Scheduler sch = new RoundRobin(2);
         sch.addProcess(new Process(5, 5, 0));
         sch.addProcess(new Process(3, 5, 1));
         sch.addProcess(new Process(4, 5, 2));
@@ -32,7 +50,9 @@ public abstract class Scheduler {
                 sch.readyProcess(currentTime);
                 continue;
             }
-            int t = sch.processes.get(pid).remainingTime;
+
+            int t = (sch.timeQuantum > 0 && sch.timeQuantum <= sch.processes.get(pid).remainingTime) ? sch.timeQuantum
+                    : sch.processes.get(pid).remainingTime;
             for (int i = 0; i < t; i++) {
                 currentTime++;
                 sch.readyProcess(currentTime);
@@ -40,13 +60,11 @@ public abstract class Scheduler {
                 if (sch.isPreemptive && sch.peekNextProcess() != top_pid) {
                     if ((sch instanceof SJF) && sch.processes.get(sch.peekNextProcess()).remainingTime < sch.processes
                             .get(pid).remainingTime) {
-                        sch.processQueue.add(new Pair<>(pid, sch.processes.get(pid).arrivalTime));
-                        sch.readyProcess(currentTime);
+                        sch.reReady(pid);
                         break;
                     } else if ((sch instanceof Priority)
                             && sch.processes.get(sch.peekNextProcess()).priority < sch.processes.get(pid).priority) {
-                        sch.processQueue.add(new Pair<>(pid, sch.processes.get(pid).arrivalTime));
-                        sch.readyProcess(currentTime);
+                        sch.reReady(pid);
                         break;
                     }
 
@@ -54,6 +72,10 @@ public abstract class Scheduler {
                         top_pid = sch.peekNextProcess();
                     }
                 }
+
+            }
+            if (sch.timeQuantum > 0) {
+                sch.reReady(pid);
             }
 
         }
@@ -81,13 +103,15 @@ public abstract class Scheduler {
 
     abstract int peekNextProcess();
 
+    abstract void reReady(int pid);
+
 }
 
 class FCFS extends Scheduler {
     public Queue<Integer> readyQueue;
 
-    public FCFS(boolean isPreemptive) {
-        super(isPreemptive);
+    public FCFS() {
+        super();
         readyQueue = new LinkedList<>();
 
     }
@@ -107,6 +131,12 @@ class FCFS extends Scheduler {
     @Override
     int peekNextProcess() {
         return readyQueue.isEmpty() ? -1 : readyQueue.peek();
+    }
+
+    @Override
+    void reReady(int pid) {
+        if (processes.get(pid).remainingTime > 0)
+            readyQueue.add(pid);
     }
 
 }
@@ -139,6 +169,11 @@ class SJF extends Scheduler {
         return readyQueue.isEmpty() ? -1 : readyQueue.peek().pid();
     }
 
+    void reReady(int pid) {
+        if (processes.get(pid).remainingTime > 0)
+            readyQueue.add(new Pair<>(pid, processes.get(pid).remainingTime));
+    }
+
 }
 
 class Priority extends Scheduler {
@@ -167,6 +202,45 @@ class Priority extends Scheduler {
     @Override
     int peekNextProcess() {
         return readyQueue.isEmpty() ? -1 : readyQueue.peek().pid();
+    }
+
+    void reReady(int pid) {
+        if (processes.get(pid).remainingTime > 0)
+            readyQueue.add(new Pair<>(pid, processes.get(pid).priority));
+    }
+
+}
+
+class RoundRobin extends Scheduler {
+    public Queue<Integer> readyQueue;
+
+    public RoundRobin(int timeQuantum) {
+        super(timeQuantum);
+        readyQueue = new LinkedList<>();
+
+    }
+
+    @Override
+    void readyProcess(int currentTime) {
+        while (!processQueue.isEmpty() && currentTime >= processQueue.peek().num())
+            readyQueue.add(processQueue.poll().pid());
+
+    }
+
+    @Override
+    int getNextProcess() {
+        return readyQueue.isEmpty() ? -1 : readyQueue.poll();
+    }
+
+    @Override
+    int peekNextProcess() {
+        return readyQueue.isEmpty() ? -1 : readyQueue.peek();
+    }
+
+    @Override
+    void reReady(int pid) {
+        if (processes.get(pid).remainingTime > 0)
+            readyQueue.add(pid);
     }
 
 }
