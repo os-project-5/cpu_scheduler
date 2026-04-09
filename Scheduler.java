@@ -36,13 +36,14 @@ public abstract class Scheduler {
 
     public static void main(String[] args) {
         int currentTime = 0;
+        int pid;
         Scheduler sch = new RoundRobin(2);
         sch.addProcess(new Process(5, 5, 0));
         sch.addProcess(new Process(3, 5, 1));
         sch.addProcess(new Process(4, 5, 2));
         sch.readyProcess(currentTime);
         while (currentTime < 20) {
-            int pid = sch.getNextProcess();
+            pid = sch.getNextProcess();
             int top_pid = sch.peekNextProcess();
 
             if (pid == -1) {
@@ -104,143 +105,5 @@ public abstract class Scheduler {
     abstract int peekNextProcess();
 
     abstract void reReady(int pid);
-
-}
-
-class FCFS extends Scheduler {
-    public Queue<Integer> readyQueue;
-
-    public FCFS() {
-        super();
-        readyQueue = new LinkedList<>();
-
-    }
-
-    @Override
-    void readyProcess(int currentTime) {
-        while (!processQueue.isEmpty() && currentTime >= processQueue.peek().num())
-            readyQueue.add(processQueue.poll().pid());
-
-    }
-
-    @Override
-    int getNextProcess() {
-        return readyQueue.isEmpty() ? -1 : readyQueue.poll();
-    }
-
-    @Override
-    int peekNextProcess() {
-        return readyQueue.isEmpty() ? -1 : readyQueue.peek();
-    }
-
-    @Override
-    void reReady(int pid) {
-        if (processes.get(pid).remainingTime > 0)
-            readyQueue.add(pid);
-    }
-
-}
-
-class SJF extends Scheduler {
-    PriorityQueue<Pair<Integer, Integer>> readyQueue;
-
-    public SJF(boolean isPreemptive) {
-        super(isPreemptive);
-        readyQueue = new PriorityQueue<>(
-                Comparator.comparingInt(p -> p.num()));
-    }
-
-    @Override
-    void readyProcess(int currentTime) {
-        while (!processQueue.isEmpty() && currentTime >= processQueue.peek().num()) {
-            int pid = processQueue.poll().pid();
-            readyQueue.add(new Pair<>(pid, processes.get(pid).remainingTime));
-        }
-
-    }
-
-    @Override
-    int getNextProcess() {
-        return readyQueue.isEmpty() ? -1 : readyQueue.poll().pid();
-    }
-
-    @Override
-    int peekNextProcess() {
-        return readyQueue.isEmpty() ? -1 : readyQueue.peek().pid();
-    }
-
-    void reReady(int pid) {
-        if (processes.get(pid).remainingTime > 0)
-            readyQueue.add(new Pair<>(pid, processes.get(pid).remainingTime));
-    }
-
-}
-
-class Priority extends Scheduler {
-    PriorityQueue<Pair<Integer, Integer>> readyQueue;
-
-    public Priority(boolean isPreemptive) {
-        super(isPreemptive);
-        readyQueue = new PriorityQueue<>(
-                Comparator.comparingInt(p -> p.num()));
-    }
-
-    @Override
-    void readyProcess(int currentTime) {
-        while (!processQueue.isEmpty() && currentTime >= processQueue.peek().num()) {
-            int pid = processQueue.poll().pid();
-            readyQueue.add(new Pair<>(pid, processes.get(pid).priority));
-        }
-
-    }
-
-    @Override
-    int getNextProcess() {
-        return readyQueue.isEmpty() ? -1 : readyQueue.poll().pid();
-    }
-
-    @Override
-    int peekNextProcess() {
-        return readyQueue.isEmpty() ? -1 : readyQueue.peek().pid();
-    }
-
-    void reReady(int pid) {
-        if (processes.get(pid).remainingTime > 0)
-            readyQueue.add(new Pair<>(pid, processes.get(pid).priority));
-    }
-
-}
-
-class RoundRobin extends Scheduler {
-    public Queue<Integer> readyQueue;
-
-    public RoundRobin(int timeQuantum) {
-        super(timeQuantum);
-        readyQueue = new LinkedList<>();
-
-    }
-
-    @Override
-    void readyProcess(int currentTime) {
-        while (!processQueue.isEmpty() && currentTime >= processQueue.peek().num())
-            readyQueue.add(processQueue.poll().pid());
-
-    }
-
-    @Override
-    int getNextProcess() {
-        return readyQueue.isEmpty() ? -1 : readyQueue.poll();
-    }
-
-    @Override
-    int peekNextProcess() {
-        return readyQueue.isEmpty() ? -1 : readyQueue.peek();
-    }
-
-    @Override
-    void reReady(int pid) {
-        if (processes.get(pid).remainingTime > 0)
-            readyQueue.add(pid);
-    }
 
 }
